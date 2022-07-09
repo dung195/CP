@@ -1,71 +1,77 @@
-// video https://youtu.be/dOAxrhAUIhA
-// problem https://www.spoj.com/problems/LCASQ/
 #include <bits/stdc++.h>
 using namespace std;
+#define MAXN 100005
+int n, h[MAXN], p[MAXN][20], par[MAXN];
 
-const int MAX_N = 10000;
-const int LOG = 14;
-vector<int> children[MAX_N];
-int up[MAX_N][LOG]; // up[v][j] is 2^j-th ancestor of v
-int depth[MAX_N];
 
-void dfs(int a) {
-	for(int b : children[a]) {
-		depth[b] = depth[a] + 1;
-		up[b][0] = a; // a is parent of b
-		for(int j = 1; j < LOG; j++) {
-			up[b][j] = up[up[b][j-1]][j-1];		
-		}
-		dfs(b);
+void dfs(int u){
+	if(h[u]>0) return;
+	if(par[u] == 0) h[u] = 1;
+	else{
+		dfs(par[u]);
+		h[u] = h[par[u]] + 1;
 	}
 }
-
-int get_lca(int a, int b) { // O(log(N))
-	if(depth[a] < depth[b]) {
-		swap(a, b);
-	}
-	// 1) Get same depth.
-	int k = depth[a] - depth[b];
-	for(int j = LOG - 1; j >= 0; j--) {
-		if(k & (1 << j)) {
-			a = up[a][j]; // parent of a
-		}
-	}
-	// 2) if b was ancestor of a then now a==b
-	if(a == b) {
-		return a;
-	}
-	// 3) move both a and b with powers of two
-	for(int j = LOG - 1; j >= 0; j--) {
-		if(up[a][j] != up[b][j]) {
-			a = up[a][j];
-			b = up[b][j];
-		}
-	}
-	return up[a][0];
+int getbit(int x, int i){
+	return (x>>i)&1;
 }
+int lca(int u, int v){
+	if(h[u]<h[v]) swap(u,v);
+	//u la dinh co do sau lon hon v => nhay u
+	//B1: nhay u sao cho h[u] = h[v]
+	int x = h[u] - h[v];
 
+	for(int i = 0; i<20; i++)
+		if(getbit(x,i)==1){
+			u = p[u][i];
+		}
+	if(u==v) return u;
+	for(int i = 19; i>=0; i--){
+		if(p[u][i] != p[v][i]){
+			u = p[u][i];
+			v = p[v][i];
+		}
+	}
+	return p[u][0];
+}
 int main() {
-	// freopen("main.inp","r",stdin);
-	// freopen("main.out","w",stdout);
-	int n;
-	cin >> n;
-	for(int v = 0; v < n; ++v) {
-		// read children of v
-		int cnt;
-		cin >> cnt;
-		for(int i = 0; i < cnt; i++) {
-			int c;
-			cin >> c;
-			children[v].push_back(c);
+	int test;
+	cin>>test;
+	for(int te = 1; te<=test; te++){
+		int u,v,x;
+		
+		cin>>n;
+		for(int i = 1; i<=n; i++){
+			cin>>x;
+			while(x--){
+				cin>>u;
+				par[u] = i;
+			}
 		}
+		
+		//Root la dinh ko co par
+		for(int i = 1; i<=n; i++)
+			dfs(i);
+		for(int i = 1; i<=n; i++)
+			p[i][0] = par[i];
+
+		//Tinh p
+		for(int i = 1; i<20; i++){
+			for(int u = 1; u<=n; u++)
+				p[u][i] = p[p[u][i-1]][i-1];
+		}
+	
+		cout<<"Case "<<te<<":"<<endl;
+		cin>>x;
+		while(x--){
+			cin>>u>>v;
+			cout<<lca(u,v)<<endl;
+		}
+		for(int i = 0; i<=n; i++){
+			h[i] = 0;
+			par[i] = 0;
+		}
+		
 	}
-	dfs(0);
-	int q;
-	cin >> q;
-	for(int i = 0; i < q; i++) {
-		int a, b;
-		cin >> a >> b;
-		cout << get_lca(a, b) << "\n";
-	}
+	return 0;
 }
